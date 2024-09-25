@@ -1,5 +1,6 @@
 #include "PPintrin.h"
 
+
 // implementation of absSerial(), but it is vectorized using PP intrinsics
 void absVector(float *values, float *output, int N)
 {
@@ -43,50 +44,78 @@ void absVector(float *values, float *output, int N)
   }
 }
 
-void clampedExpVector(float *values, int *exponents, float *output, int N)
-{
-  //
-  // PP STUDENTS TODO: Implement your vectorized version of
-  // clampedExpSerial() here.
-  //
-  // Your solution should work for any value of
-  // N and VECTOR_WIDTH, not just when VECTOR_WIDTH divides N
+void clampedExpVector(float *values, int *exponents, float *output, int N){
+    //
+    // PP STUDENTS TODO: Implement your vectorized version of
+    // clampedExpSerial() here.
+    //
+    // Your solution should work for any value of
+    // N and VECTOR_WIDTH, not just when VECTOR_WIDTH divides N
 
-  __pp_vec_float x, result;
-  __pp_vec_int exponent;
-  __pp_mask maskAll, n_mask;
-  __pp_vec_int zero = _pp_vset_int(0);
-  __pp_vec_int one = _pp_vset_int(1);
-  __pp_vec_float max_result = _pp_vset_float(9.999999f);
+    __pp_vec_float value, result;
+    __pp_vec_int exponent;
+    __pp_mask max_mask;
+    __pp_mask exponent_mask;
+    __pp_vec_float max_result = _pp_vset_float(9.999999f);
+    __pp_mask maskAll = _pp_init_ones();
+    __pp_vec_int zero = _pp_vset_int(0);
+    __pp_vec_int one = _pp_vset_int(1);
 
-  for (int i = 0; i < N; i += VECTOR_WIDTH)
-  {
-    maskAll = _pp_init_ones();
-    // ex: x = values[i]
-    _pp_vload_float(x, values + i, maskAll);
-    // ex: y = exponents[i]
-    _pp_vload_int(exponent, exponents + i, maskAll);
-    // If exponent == 0
-    _pp_veq_int(n_mask, exponent, zero, maskAll)
-    // n_mask = 0
-    n_mask = _pp_mask_not(n_mask); // ex: exp = [ 2, 2, 0], n_mask = 110
+    int i = 0;
+    while (i < N - VECTOR_WIDTH) {
 
-    // result = 1;
-    _pp_vset_float(result, 1, maskAll);
-    // while (count > 0), n_mask = 110
-    while(_pp_cntbits(n_mask) > 0){
-      // result *= x
-      _pp_vmult_float(result, result, x, n_mask);
-      // count--, if n_mask == 1
-      _pp_vsub_int(exponent, exponent, one, n_mask);
-      // if exponent > 0, n_mask--
-      _pp_vgt_int(n_mask, exponent, one, n_mask);
+      // result = 1
+      result = _pp_vset_float(1.0f);
+
+      // x = values[i]
+      _pp_vload_float(value, values + i, maskAll);
+      // y = exponents[i]
+      _pp_vload_int(exponent, exponents + i, maskAll);
+      // If exponent == 0, ex: exp = [ 2, 2, 0], n_mask = 110
+      _pp_vgt_int(exponent_mask, exponent, zero, maskAll);
+
+      while (_pp_cntbits(exponent_mask) > 0) {
+        // result *= x;
+        _pp_vmult_float(result, result, value, exponent_mask);
+        // count--;
+        _pp_vsub_int(exponent, exponent, one, exponent_mask);
+        // count > 0
+        _pp_vgt_int(exponent_mask, exponent, zero, exponent_mask);
+      }
+
+      // result > 9.999999f
+      _pp_vgt_float(max_mask, result, max_result, maskAll);
+      // result = 9.999999f
+      _pp_vmove_float(result, max_result, max_mask);
+      _pp_vstore_float(output + i, result, maskAll);
+      i += VECTOR_WIDTH;
     }
-    // if (result > 9.999999f)
-    _pp_vgt_int(result, max_result);
-    
 
-  }
+    __pp_mask a_mask = _pp_init_ones(N - i);
+    // result = 1
+    result = _pp_vset_float(1.0f);
+
+    // x = values[i]
+    _pp_vload_float(value, values + i, a_mask);
+    // y = exponents[i]
+    _pp_vload_int(exponent, exponents + i, a_mask);
+    // If exponent == 0, ex: exp = [ 2, 2, 0], n_mask = 110
+    _pp_vgt_int(exponent_mask, exponent, zero, a_mask);
+
+    _pp_vgt_int(exponent_mask, exponent, zero, a_mask);
+    while (_pp_cntbits(exponent_mask) > 0) {
+      // result *= x;
+      _pp_vmult_float(result, result, value, exponent_mask);
+      // count--;
+      _pp_vsub_int(exponent, exponent, one, exponent_mask);
+      // count > 0
+      _pp_vgt_int(exponent_mask, exponent, zero, exponent_mask);
+    }
+    // result > 9.999999f
+    _pp_vgt_float(max_mask, result, max_result, a_mask);
+    // result = 9.999999f
+    _pp_vmove_float(result, max_result, max_mask);
+    _pp_vstore_float(output + i, result, a_mask);
 }
 
 // returns the sum of all elements in values
