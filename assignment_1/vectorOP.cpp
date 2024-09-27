@@ -60,10 +60,15 @@ void clampedExpVector(float *values, int *exponents, float *output, int N){
     __pp_mask maskAll = _pp_init_ones();
     __pp_vec_int zero = _pp_vset_int(0);
     __pp_vec_int one = _pp_vset_int(1);
+    bool over = false;
 
-    int i = 0;
-    while (i < N - VECTOR_WIDTH) {
+    int i;
+    for (i = 0;; i += VECTOR_WIDTH) {
 
+      if (i + VECTOR_WIDTH > N){
+        maskAll = _pp_init_ones(N - i);
+        over = true;
+      }
       // result = 1
       result = _pp_vset_float(1.0f);
 
@@ -72,7 +77,8 @@ void clampedExpVector(float *values, int *exponents, float *output, int N){
       // y = exponents[i]
       _pp_vload_int(exponent, exponents + i, maskAll);
       // If exponent == 0, ex: exp = [ 2, 2, 0], n_mask = 110
-      _pp_vgt_int(exponent_mask, exponent, zero, maskAll);
+      _pp_veq_int(exponent_mask, exponent, zero, maskAll);
+      exponent_mask = _pp_mask_not(exponent_mask);
 
       while (_pp_cntbits(exponent_mask) > 0) {
         // result *= x;
@@ -88,50 +94,48 @@ void clampedExpVector(float *values, int *exponents, float *output, int N){
       // result = 9.999999f
       _pp_vmove_float(result, max_result, max_mask);
       _pp_vstore_float(output + i, result, maskAll);
-      i += VECTOR_WIDTH;
+      if (over) break;
     }
-
-    __pp_mask a_mask = _pp_init_ones(N - i);
-    // result = 1
-    result = _pp_vset_float(1.0f);
-
-    // x = values[i]
-    _pp_vload_float(value, values + i, a_mask);
-    // y = exponents[i]
-    _pp_vload_int(exponent, exponents + i, a_mask);
-    // If exponent == 0, ex: exp = [ 2, 2, 0], n_mask = 110
-    _pp_vgt_int(exponent_mask, exponent, zero, a_mask);
-
-    _pp_vgt_int(exponent_mask, exponent, zero, a_mask);
-    while (_pp_cntbits(exponent_mask) > 0) {
-      // result *= x;
-      _pp_vmult_float(result, result, value, exponent_mask);
-      // count--;
-      _pp_vsub_int(exponent, exponent, one, exponent_mask);
-      // count > 0
-      _pp_vgt_int(exponent_mask, exponent, zero, exponent_mask);
-    }
-    // result > 9.999999f
-    _pp_vgt_float(max_mask, result, max_result, a_mask);
-    // result = 9.999999f
-    _pp_vmove_float(result, max_result, max_mask);
-    _pp_vstore_float(output + i, result, a_mask);
 }
 
 // returns the sum of all elements in values
-// You can assume N is a multiple of VECTOR_WIDTH
-// You can assume VECTOR_WIDTH is a power of 2
+// You can assume N is a multiple of VECTOR_WIDTH, N = n*VECTOR_WIDTH
+// You can assume VECTOR_WIDTH is a power of 2, VECTOR_WIDTH = 2^n
 float arraySumVector(float *values, int N)
 {
 
   //
   // PP STUDENTS TODO: Implement your vectorized version of arraySumSerial here
   //
+  
+  // N = 8, VECTOR_WIDTH = 2
+  // ex: [1, 7, 2, 4, 3, 9, 7, 8]
+  float sum = 0;
 
-  for (int i = 0; i < N; i += VECTOR_WIDTH)
-  {
-    
+  __pp_vec_float value, result;
+  __pp_mask maskAll = _pp_init_ones();
+
+  // sum = 0
+  result = _pp_vset_float(0.f);
+  for (int i = 0; i < N; i += VECTOR_WIDTH){
+    // value = values[i]
+    _pp_vload_float(value, values + i, maskAll);
+    // sum += values[i]
+    _pp_vadd_float(result, result, value, maskAll);
   }
 
-  return 0.0;
+  // result = [8, 6, 12, 15]
+  // VECTOR_WIDTH = 2^k, ex: 2 = 2^1
+  int n = VECTOR_WIDTH;
+  while(n > 1){
+    // result = [14, 14, 27, 27]
+    _pp_hadd_float(result, result);
+    // result = [14, 27, 14, 27]
+    _pp_interleave_float(result, result);
+    
+    n /= 2;
+  }
+
+  sum = result.value[0];
+  return sum;
 }
