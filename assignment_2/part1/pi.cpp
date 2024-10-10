@@ -80,11 +80,11 @@ void *Pthread_monte_carlo(void *args) {
         __m256 in_circle_permute = _mm256_permute2f128_ps(in_circle, in_circle, 1);
 
         // 兩兩相加放前面, in_circle = [2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0]
-        in_circle = _mm256_hadd_ps(in_circle, in_circle_permute); // a1+a2, a3+a4, a5+a6, a7+a8, ....
+        in_circle = _mm256_hadd_ps(in_circle, in_circle_permute);
         // in_circle = [3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        in_circle = _mm256_hadd_ps(in_circle, in_circle); // a1+a2+a3+a4, a5+a6+a7+a8, ....
+        in_circle = _mm256_hadd_ps(in_circle, in_circle);
         // in_circle = [5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        in_circle = _mm256_hadd_ps(in_circle, in_circle); // a1+a2+a3+a4+a5+a6+a7+a8, ....
+        in_circle = _mm256_hadd_ps(in_circle, in_circle);
 
         _mm256_store_ps(result, in_circle);
         local_count_in_circle += result[0];
