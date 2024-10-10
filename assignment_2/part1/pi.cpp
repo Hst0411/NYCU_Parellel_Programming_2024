@@ -69,38 +69,26 @@ void *Pthread_monte_carlo(void *args) {
         y = _mm256_mul_ps(y, _mm256_set1_ps(2.0));
         y = _mm256_sub_ps(y, _mm256_set1_ps(1.0));
 
-        // distance_squared = x * x + y * y
+        // distance_squared = x * x + y * y, ex: distance_squared = [0.5, 1.0, 1.5, 0.8, 0.3, 1.2, 0.9, 1.4]
         distance_squared = _mm256_add_ps(_mm256_mul_ps(x, x), _mm256_mul_ps(y, y));
 
-        // If distance_squared <= 1, in_circle mask 為 1
+        // If distance_squared <= 1, in_circle mask 為 1, ex: in_circle = [1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0]
         in_circle = _mm256_cmp_ps(distance_squared, _mm256_set1_ps((float)1.0), _CMP_LE_OQ);
         in_circle = _mm256_and_ps(in_circle, _mm256_set1_ps((float)1.0));
 
+        // 將前後兩半相反, in_circle_permute = [1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0]
         __m256 in_circle_permute = _mm256_permute2f128_ps(in_circle, in_circle, 1);
 
+        // 兩兩相加放前面, in_circle = [2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0]
         in_circle = _mm256_hadd_ps(in_circle, in_circle_permute); // a1+a2, a3+a4, a5+a6, a7+a8, ....
+        // in_circle = [3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         in_circle = _mm256_hadd_ps(in_circle, in_circle); // a1+a2+a3+a4, a5+a6+a7+a8, ....
+        // in_circle = [5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         in_circle = _mm256_hadd_ps(in_circle, in_circle); // a1+a2+a3+a4+a5+a6+a7+a8, ....
 
         _mm256_store_ps(result, in_circle);
-        local_count_in_circle += (short) result[0];
-        /*
-        // Count the number of points inside the circle
-        // 將 256bits 的低 128bits 取出來，並轉換為 128bits 的 single precision floating point (__m128)
-        __m128 low = _mm256_castps256_ps128(in_circle);
-        __m256d low_d = _mm256_cvtps_pd(low);
-        // 將 256bits 的高 128bits 取出來，並轉換為 128bits 的 single precision floating point (__m128)
-        __m128 high = _mm256_extractf128_ps(in_circle, 1);
-        __m256d high_d = _mm256_cvtps_pd(high);
-
-        count1 = _mm256_add_pd(count1, low_d);
-        count2 = _mm256_add_pd(count2, high_d);*/
+        local_count_in_circle += result[0];
     }
-
-    /*double results[4];
-    count1 = _mm256_add_pd(count1, count2);
-    _mm256_store_pd(results, count1);
-    local_count_in_circle += results[0] + results[1] + results[2] + results[3];**/
 
     pthread_mutex_lock(&mutex);
     data->number_in_circle += local_count_in_circle;
