@@ -11,10 +11,10 @@ Assignments
 
 - `1` SIMD Programming - https://hackmd.io/@rjrGMU3mRO2bOlkt_7lsqA/ry9zuoFTR
 - `2` Multi-thread Programming - https://hackmd.io/@rjrGMU3mRO2bOlkt_7lsqA/SkdxgX4JJe
-- `3` OpenMP Programming
-- `4` MPI Programming
-- `5` CUDA Programming
-- `6` OpenCL Programming
+- `3` 
+- `4` 
+- `5` 
+- `6` 
 
 Final Project
 ---
