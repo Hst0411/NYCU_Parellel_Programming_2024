@@ -1,8 +1,5 @@
 # NYCU Parallel Programming, 2024 Fall
 
-> [!NOTE]
-> `Final project and report are included.`
-
 - 📖 Parallel Programming, 2024 Fall, NYCU
 - 🧑‍🏫 You, Yi-Ping
 
