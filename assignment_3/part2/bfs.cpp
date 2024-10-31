@@ -31,7 +31,9 @@ void top_down_step(Graph g, vertex_set *frontier, vertex_set *new_frontier, int 
 {   
     #pragma omp parallel
     {
+        // local count
         int new_frontier_count = 0;
+        // local frontier [] = Vertex array, array size = g->num_nodes;
         Vertex *new_frontier_temp = new Vertex[g->num_nodes];
 
         #pragma omp for schedule(dynamic, 1024)
@@ -44,6 +46,7 @@ void top_down_step(Graph g, vertex_set *frontier, vertex_set *new_frontier, int 
             int end_edge = (node == g->num_nodes - 1) ? g->num_edges : g->outgoing_starts[node + 1];
 
             // attempt to add all neighbors to the new frontier
+            #pragma oomp for reduction(+:new_frontier_count)
             for (int neighbor = start_edge; neighbor < end_edge; neighbor++)
             {
                 int outgoing = g->outgoing_edges[neighbor];
@@ -62,11 +65,13 @@ void top_down_step(Graph g, vertex_set *frontier, vertex_set *new_frontier, int 
 
         #pragma omp critical
         {
+            // 將 local frontier copy 至起始位置在 new_frontier->vertices 的 end，要 copy new_frontier_count 的大小
             memcpy(new_frontier->vertices + new_frontier->count, new_frontier_temp, sizeof(int) * new_frontier_count);
+            // 更新 new_frontier->count，已 copy 的數量
             new_frontier->count += new_frontier_count;
         }
 
-        delete [] new_frontier_temp;
+        free(new_frontier_temp);
     }
 }
 
