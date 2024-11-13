@@ -46,6 +46,7 @@ int main(int argc, char **argv)
         for (int source = 1; source < world_size; source++){
             MPI_Irecv(&tmp[source - 1], 1, MPI_LONG_LONG, source, 0, MPI_COMM_WORLD, &requests[source - 1]);
         }
+        
         MPI_Waitall(world_size - 1, requests, MPI_STATUSES_IGNORE);
 
         for (int source = 1; source < world_size; source++){
