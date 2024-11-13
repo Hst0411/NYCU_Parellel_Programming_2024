@@ -49,7 +49,6 @@ int main(int argc, char **argv)
     {
         // TODO: process PI result
         pi_result = 4.0 * (double)count / tosses;
-
         // --- DON'T TOUCH ---
         double end_time = MPI_Wtime();
         printf("%lf\n", pi_result);
