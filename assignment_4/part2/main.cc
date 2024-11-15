@@ -45,10 +45,15 @@ int main (int argc, const char **argv) {
     construct_matrices(in, &n, &m, &l, &a_mat, &b_mat);
     matrix_multiply(n, m, l, a_mat, b_mat);
     destruct_matrices(a_mat, b_mat);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     double end_time = MPI_Wtime();
-    MPI_Finalize();
-    std::cout << "MPI running time: " << end_time - start_time << " Seconds\n";
 
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if(rank == 0)
+        std::cout << "MPI running time: " << end_time - start_time << " Seconds\n";
+
+    MPI_Finalize();
     return 0;
 }
