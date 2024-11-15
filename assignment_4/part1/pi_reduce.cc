@@ -21,23 +21,23 @@ int main(int argc, char **argv)
     // MPI_Status status;
     long long num_iter = tosses / world_size;
     unsigned int seed = time(NULL) + world_rank;
-    long long count = 0;
+    long long tmp = 0;
 
     for(int i = 0; i < num_iter; i++){
         double x = (double)rand_r(&seed) / RAND_MAX;  // Random x between -1 and 1
         double y = (double)rand_r(&seed) / RAND_MAX;  // Random y between -1 and 1
         double distance_squared = x * x + y * y;
-        if (distance_squared <= 1) count++;
+        if (distance_squared <= 1) tmp++;
     }
 
     // TODO: use MPI_Reduce
-    long long tmp;
-    MPI_Reduce(&count, &tmp, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+    long long count;
+    MPI_Reduce(&tmp, &count, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if (world_rank == 0)
     {
         // TODO: PI result
-        pi_result = 4.0 * (double)tmp / tosses;
+        pi_result = 4.0 * (double)count / tosses;
         // --- DON'T TOUCH ---
         double end_time = MPI_Wtime();
         printf("%lf\n", pi_result);
