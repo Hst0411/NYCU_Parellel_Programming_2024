@@ -68,7 +68,7 @@ void matrix_multiply(const int n, const int m, const int l, const int *a_mat, co
     int i, j, k;
     numworker = world_size - 1;
     if (world_rank == MASTER){
-	    int *c;
+	int *c;
     	c = (int*)malloc(sizeof(int) * n * l);
         /* Send matrix data to the worker tasks */
         averow = n / numworker;
@@ -111,7 +111,7 @@ void matrix_multiply(const int n, const int m, const int l, const int *a_mat, co
         MPI_Recv(&N, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
         MPI_Recv(&M, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
         MPI_Recv(&L, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
-	    int *a;
+	int *a;
     	int *b;
     	int *c;
     	a = (int*)malloc(sizeof(int) * N * M);
