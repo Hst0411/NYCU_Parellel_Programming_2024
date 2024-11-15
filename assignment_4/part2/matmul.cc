@@ -14,10 +14,9 @@ void construct_matrices(std::ifstream &in, int *n_ptr, int *m_ptr, int *l_ptr, i
     int world_rank, world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
     if(world_rank == 0){
-        in >> *n_ptr >> *m_ptr >> *l_ptr;
 
+        in >> *n_ptr >> *m_ptr >> *l_ptr;
         int n = *n_ptr;
         int m = *m_ptr;
         int l = *l_ptr;
@@ -30,7 +29,7 @@ void construct_matrices(std::ifstream &in, int *n_ptr, int *m_ptr, int *l_ptr, i
 
         for(int i = 0; i < n; i++){
             for (int j = 0; j < m; j++){
-            // read ptr instead of address
+                // read ptr instead of address
                 in >> *a_mat_ptr[i * m + j];
             }
         }
@@ -42,11 +41,11 @@ void construct_matrices(std::ifstream &in, int *n_ptr, int *m_ptr, int *l_ptr, i
         }
         /* test input
         for(int i = 0; i < n*m; i++){
-            printf("%d ", *a_mat_ptr[i]);
+            printf("a_mat_ptr: %d ", *a_mat_ptr[i]);
         }
         printf("\n");
         for(int i = 0; i < m*l; i++){
-            printf("%d ", *b_mat_ptr[i]);
+            printf("b_mat_ptr: %d ", *b_mat_ptr[i]);
         }
         */
     }
@@ -150,14 +149,15 @@ void matrix_multiply(const int n, const int m, const int l, const int *a_mat, co
         free(c);
 
     }
+    
 }
 
 
 void destruct_matrices(int *a_mat, int *b_mat){
-    int size, rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (rank == MASTER){
+    int world_size, world_rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    if (world_rank == MASTER){
         free(a_mat);
         free(b_mat);
     }
