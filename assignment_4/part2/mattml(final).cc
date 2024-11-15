@@ -32,19 +32,15 @@ void construct_matrices(std::ifstream &in, int *n_ptr, int *m_ptr, int *l_ptr, i
         }
 
         /* debug purpose */
-        for (int i = 0; i < n; i++){
-            for (int j = 0; j < m; j++){
-                printf("%d ", (*a_mat_ptr)[i * m + j]);
-            }
-            printf("\n");
+        /* test input
+        for(int i = 0; i < n*m; i++){
+            printf("a_mat_ptr: %d ", *a_mat_ptr[i]);
         }
-
-         for (int i = 0; i < m; i++){
-            for (int j = 0; j < l; j++){
-                printf("%d ", (*b_mat_ptr)[i * l + j]);
-            }
-            printf("\n");
+        printf("\n");
+        for(int i = 0; i < m*l; i++){
+            printf("b_mat_ptr: %d ", *b_mat_ptr[i]);
         }
+        */
     }
 
     MPI_Bcast(n_ptr, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
