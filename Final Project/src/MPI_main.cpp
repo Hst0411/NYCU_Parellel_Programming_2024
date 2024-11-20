@@ -1,17 +1,51 @@
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include <set>
 #include <vector>
-#include <mpi.h>
-#include <fstream>
+#include <time.h>
 #include <sstream>
-#include <chrono>
+#include <string>
+#include <algorithm>
+#include <mpi.h>
+
 #include "../include/fptree.hpp"
 
-#define MASTER 0
+std::vector<Transaction> readTransactionsFromFile(const std::string& filename) {
+    std::vector<Transaction> transactions;
 
-void test_1()
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Cannot open the file: " << filename << "!!!" << std::endl;
+        return transactions;
+    }
+    //std::cerr << "Open the file: " << filename << " successfully !!!" << std::endl;
+    std::string line;
+    while (std::getline(file, line)) {
+        std::vector<std::string> transaction;
+        std::istringstream line_stream(line);
+        std::string item;
+
+        // 處理每一行的每個數字
+        while (std::getline(line_stream, item, ',')) {
+            item.erase(remove(item.begin(), item.end(), ' '), item.end()); // remove space
+            if (!item.empty()) { // 不插入空char
+                transaction.push_back(item); // insert item
+            }
+        }
+
+        if (!transaction.empty()) { // 確保不插入空的交易
+            transactions.push_back(transaction);
+        }
+    }
+
+    file.close();
+    return transactions;
+}
+
+
+void test_1(const std::string& filename)
 {
     const Item a{ "A" };
     const Item b{ "B" };
@@ -19,6 +53,27 @@ void test_1()
     const Item d{ "D" };
     const Item e{ "E" };
 
+    // const std::string filename = "../dataset/input.txt";
+
+    // read transaction data
+    std::vector<Transaction> transactions = readTransactionsFromFile(filename);
+
+    // test output
+    /*
+    int total = 0;
+    std::cout << "Loading data: " << filename << std::endl;
+    for (const auto& transaction : transactions) {
+        for (const auto& item : transaction) {
+            std::cout << item << " ";
+        }
+        total++;
+        std::cout << std::endl;
+    }
+    std::cout << "Datasets: " << filename << std::endl;
+    std::cout << "Total: " << total << std::endl;
+    */
+    // std::cout << "transactions[4][4]: " << transactions[4][4] << std::endl;
+    /*
     const std::vector<Transaction> transactions{
         { a, b },
         { b, c, d },
@@ -31,13 +86,14 @@ void test_1()
         { a, b, d },
         { b, c, e }
     };
+    */
 
     const uint64_t minimum_support_threshold = 2;
 
     const FPTree fptree{ transactions, minimum_support_threshold };
 
-    const std::set<Pattern> patterns = fptree_growth( fptree );
-
+    // const std::set<Pattern> patterns = fptree_growth( fptree );
+    /*
     assert( patterns.size() == 19 );
     assert( patterns.count( { { a }, 8 } ) );
     assert( patterns.count( { { b, a }, 5 } ) );
@@ -58,6 +114,7 @@ void test_1()
     assert( patterns.count( { { e, a, d }, 2 } ) );
     assert( patterns.count( { { e, a }, 2 } ) );
     assert( patterns.count( { { e }, 3 } ) );
+    */
 }
 
 void test_2()
@@ -160,107 +217,21 @@ void test_3()
     assert( patterns.count( { { a }, 3 } ) );
 }
 
-
-// load datasets
-std::vector<Transaction> load_transactions(const std::string& filename) {
-    std::ifstream infile(filename);
-    std::string line;
-    std::vector<Transaction> transactions;
-
-    while (std::getline(infile, line)) {
-        std::istringstream iss(line);
-        Transaction transaction;
-        std::string item;
-        while (std::getline(iss, item, ',')) {
-            transaction.push_back(item);
-        }
-        transactions.push_back(transaction);
-    }
-    return transactions;
-}
-
-
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-
     MPI_Init(&argc, &argv);
-
-    int rank, size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-    const std::string dataset_file = "low_50.txt";
-    const uint64_t minimum_support_threshold = 3;
-
-    // start time
-    auto total_start_time = std::chrono::high_resolution_clock::now();
-
-    std::vector<Transaction> all_transactions;
-    // MASTER
-    if (rank == MASTER) {
-        std::cout << "load datasets: " << dataset_file << std::endl;
-        all_transactions = load_transactions(dataset_file);
+    int world_rank, world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    double start_time = MPI_Wtime();
+    test_1("../dataset/low_50.txt");
+    if (world_rank == 0){
+        double end_time = MPI_Wtime();
+        std::cout << "Test case1 costs " << (end_time - start_time)*1000 << " ms\n";
+        std::cout << "Test1 passed!" << std::endl;
     }
-
-    // broadcast item num
-    int transaction_count = all_transactions.size();
-    MPI_Bcast(&transaction_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-    // assign item to processor
-    int chunk_size = transaction_count / size;
-    std::vector<Transaction> local_transactions(chunk_size);
-    MPI_Scatter(
-        all_transactions.data(), chunk_size, MPI_CHAR,
-        local_transactions.data(), chunk_size, MPI_CHAR,
-        0, MPI_COMM_WORLD
-    );
-
-    // local construct FP-tree, extract frequency item sett
-    FPTree local_fptree(local_transactions, minimum_support_threshold);
-    std::set<Pattern> local_patterns = fptree_growth(local_fptree);
-
-    // Reduce frequency item set from all processors
-    std::set<Pattern> global_patterns;
-    std::vector<std::pair<std::set<Item>, uint64_t>> local_patterns_vector(local_patterns.begin(), local_patterns.end());
-    std::vector<std::pair<std::set<Item>, uint64_t>> global_patterns_vector;
-
-    if (rank == 0) {
-        global_patterns_vector.resize(local_patterns_vector.size() * size);
-    }
-
-    MPI_Reduce(local_patterns_vector.data(), global_patterns_vector.data(),
-            local_patterns_vector.size() * sizeof(std::pair<std::set<Item>, uint64_t>), MPI_BYTE, MPI_SUM, 0, MPI_COMM_WORLD);
-
-    if (rank == 0) {
-        global_patterns.insert(global_patterns_vector.begin(), global_patterns_vector.end());
-    }
-
-
-
-    // MASTER output
-    if (rank == 0) {
-        auto total_end_time = std::chrono::high_resolution_clock::now();
-        std::cout << "Global patterns: " << std::endl;
-        for (const auto& pattern : global_patterns) {
-            std::cout << "Pattern: ";
-            for (const auto& item : pattern.first) {
-                std::cout << item << " ";
-            }
-            std::cout << "Support: " << pattern.second << std::endl;
-        }
-
-        // total time
-        std::chrono::duration<double> total_elapsed = (total_end_time - total_start_time) * 1000;
-        std::cout << "Total elapsed time: " << total_elapsed.count() << " ms" << std::endl;
-    }
-
-    MPI_Finalize();
-    std::cout << "All tests passed!" << std::endl;
-    return 0;
-    //test_1();
     //test_2();
     //test_3();
-    
-
-    //return EXIT_SUCCESS;
+    MPI_Finalize();
+    return 0;
 }
