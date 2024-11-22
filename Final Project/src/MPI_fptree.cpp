@@ -25,23 +25,23 @@ FPTree::FPTree(const std::vector<Transaction>& transactions, uint64_t minimum_su
     //std::cout << "world size " << " = " << world_size << '\n';
     // MPI_Status status;
 
-    // 1. 資料分割：將交易資料平均分給各處理器
+    // 將交易資料平均分給各處理器
     int total_transactions = transactions.size();
     //std::cout << "rank " << world_rank << ", total_transactions: " << total_transactions << '\n';
     int local_transaction_count = total_transactions / world_size;
     //std::cout << "rank " << world_rank << ", local_transaction_count: " << local_transaction_count << '\n';
     int extra_transactions = total_transactions % world_size;
     //std::cout << "rank " << world_rank << ", extra_transactions: " << extra_transactions << '\n';
-    // 計算每個處理器的交易索引範圍
+    // 計算每個處理器的交易範圍
     int start_idx = world_rank * local_transaction_count + std::min(world_rank, extra_transactions);
     //std::cout << "rank " << world_rank << ", start_idx: " << start_idx << '\n';
     int end_idx = start_idx + local_transaction_count + (world_rank < extra_transactions);
     //std::cout << "rank " << world_rank << ", end_idx: " << end_idx << '\n';
 
-    // 獲取本地資料
+    // local data
     std::vector<Transaction> local_transactions(transactions.begin() + start_idx, transactions.begin() + end_idx);
 
-    // 2. 局部頻率計算
+    // Calculate local frequency
     std::map<Item, uint64_t> local_frequency_by_item;
     for (const Transaction& transaction : local_transactions) {
         for (const Item& item : transaction) {
@@ -49,10 +49,21 @@ FPTree::FPTree(const std::vector<Transaction>& transactions, uint64_t minimum_su
         }
     }
     /**/
-    // 3. 聚合所有處理器的頻率表
+    // Send local frequency
     std::map<Item, uint64_t> global_frequency_by_item;
     if (world_rank > 0){
-        //std::cout << "Here is rank: " << world_rank << std::endl;
+        /*
+        std::cout << "------------------------------------------------------" << std::endl;
+        std::cout << "Here is rank: " << world_rank << std::endl;
+        std::cout << "Counting the frequency of each item:" << std::endl;
+        for ( const Transaction& transaction : local_transactions ) {
+            for ( const Item& item : transaction ) {
+                // 計數每個 item 在 transaction 中的出現次數
+                std::cout << "item: " << item << " frequency: "  << local_frequency_by_item[item] << ", ";
+            }
+            std::cout << std::endl;
+        }
+        */
         for (const auto& pair : local_frequency_by_item) {
             const std::string& item = pair.first;
             uint64_t frequency = pair.second;
@@ -61,13 +72,15 @@ FPTree::FPTree(const std::vector<Transaction>& transactions, uint64_t minimum_su
             MPI_Send(item.c_str(), item.size() + 1, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
             MPI_Send(&frequency, 1, MPI_UINT64_T, 0, 0, MPI_COMM_WORLD);
         }
-        // 傳送空字串作為結束標誌
+        // 傳送空字串表示結束
         char end_signal = '\0';
         MPI_Send(&end_signal, 1, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
+        
     }
+    // Master Receive frequency
     else if (world_rank == 0){
         //std::cout << "Here is MASTER Rank" << std::endl;
-        global_frequency_by_item = local_frequency_by_item; // 先加上主節點自己的資料
+        global_frequency_by_item = local_frequency_by_item; // 先加上 Master data
 
         for (int source = 1; source < world_size; ++source) {
             while (true) {
@@ -84,10 +97,14 @@ FPTree::FPTree(const std::vector<Transaction>& transactions, uint64_t minimum_su
                 // 接收 frequency
                 MPI_Recv(&frequency, 1, MPI_UINT64_T, source, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-                // 合併到全域頻率表
                 global_frequency_by_item[item] += frequency;
             }
         }
+        /*
+        for (const auto& pair : global_frequency_by_item) {
+            std::cout << "item: " << pair.first << ", frequency: " << pair.second << '\n';
+        }
+        */
     }
     MPI_Barrier(MPI_COMM_WORLD);
     /*
@@ -117,7 +134,7 @@ FPTree::FPTree(const std::vector<Transaction>& transactions, uint64_t minimum_su
         std::cout << "------------------------------------------------------" << std::endl;
     }
     */
-    /**/
+    /*
     // keep only items which have a frequency greater or equal than the minimum support threshold
     // Delete freq. < threshold 的 item
     for ( auto it = global_frequency_by_item.cbegin(); it != global_frequency_by_item.cend(); ) {
@@ -130,7 +147,7 @@ FPTree::FPTree(const std::vector<Transaction>& transactions, uint64_t minimum_su
             ++it;
         }
     }
-    
+    */
     /*
     // test output
     std::cout << "Keep only items which have a frequency greater or equal than the minimum support threshold:" << std::endl;
@@ -166,7 +183,7 @@ FPTree::FPTree(const std::vector<Transaction>& transactions, uint64_t minimum_su
 
     // scan the transactions again
     // 構建 FP-tree
-    /*
+    /**/
     for ( const Transaction& transaction : transactions ) {
         // 從 root start
         auto curr_fpnode = root;
@@ -228,7 +245,7 @@ FPTree::FPTree(const std::vector<Transaction>& transactions, uint64_t minimum_su
                 }
             }
         }
-    }*/
+    }
     
     // select and sort the frequent items in transaction according to the order of items_ordered_by_frequency
     /*
