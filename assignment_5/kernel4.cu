@@ -74,23 +74,22 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     dim3 blockSize(16, 16);
     dim3 numBlocks(resX / blockSize.x, resY / blockSize.y);
 
-    switch (maxIterations) {
-        case 256:
-            mandelKernel<256><<<numBlocks, blockSize>>>(DeviceMemory, resX, resY, lowerX, lowerY, stepX, stepY);
-            break;
-        case 1000:
-            mandelKernel<1000><<<numBlocks, blockSize>>>(DeviceMemory, resX, resY, lowerX, lowerY, stepX, stepY);
-            break;
-        case 10000:
-            mandelKernel<10000><<<numBlocks, blockSize>>>(DeviceMemory, resX, resY, lowerX, lowerY, stepX, stepY);
-            break;
-        case 100000:
-            mandelKernel<100000><<<numBlocks, blockSize>>>(DeviceMemory, resX, resY, lowerX, lowerY, stepX, stepY);
-            break;
-        default:
-            mandelKernelDefault<<<numBlocks, blockSize>>>(DeviceMemory, resX, resY, lowerX, lowerY, stepX, stepY, maxIterations);
-            break;
+    if (maxIterations == 256) {
+        mandelKernel<256><<<numBlocks, blockSize>>>(DeviceMemory, resX, resY, lowerX, lowerY, stepX, stepY);
     }
+    else if (maxIterations == 1000){
+        mandelKernel<1000><<<numBlocks, blockSize>>>(DeviceMemory, resX, resY, lowerX, lowerY, stepX, stepY);
+    }
+    else if (maxIterations == 10000){
+        mandelKernel<10000><<<numBlocks, blockSize>>>(DeviceMemory, resX, resY, lowerX, lowerY, stepX, stepY);
+    }
+    else if (maxIterations == 100000){
+        mandelKernel<100000><<<numBlocks, blockSize>>>(DeviceMemory, resX, resY, lowerX, lowerY, stepX, stepY);
+    }
+    else{
+        mandelKernelDefault<<<numBlocks, blockSize>>>(DeviceMemory, resX, resY, lowerX, lowerY, stepX, stepY, maxIterations);
+    }
+    
     cudaMemcpy(img, DeviceMemory, size, cudaMemcpyDeviceToHost);
     //memcpy(img, HostMemory, size);
     
