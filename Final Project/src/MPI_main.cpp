@@ -91,7 +91,6 @@ void test_1(const std::string& filename)
     const uint64_t minimum_support_threshold = 2;
 
     const FPTree fptree{ transactions, minimum_support_threshold };
-
     // const std::set<Pattern> patterns = fptree_growth( fptree );
     /*
     assert( patterns.size() == 19 );
@@ -223,12 +222,8 @@ int main(int argc, char **argv)
     int world_rank, world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-    double start_time = MPI_Wtime();
-    test_1("../dataset/low_50.txt");
-    if (world_rank == 0){
-        double end_time = MPI_Wtime();
-        std::cout << "Test case1 costs " << (end_time - start_time)*1000 << " ms\n";
-        std::cout << "Test1 passed!" << std::endl;
+    for(int i = 0; i < 100; i++){
+        test_1("../dataset/input.txt");
     }
     //test_2();
     //test_3();
