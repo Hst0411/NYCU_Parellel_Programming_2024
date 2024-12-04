@@ -10,6 +10,7 @@ Assignments
 - `2` Multi-thread Programming - https://hackmd.io/@rjrGMU3mRO2bOlkt_7lsqA/SkdxgX4JJe
 - `3` OpenMP Programming
 - `4` MPI Programming
-
+- `5` CUDA Programming
+   
 Final Project
 ---
