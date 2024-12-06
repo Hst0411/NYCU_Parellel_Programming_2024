@@ -11,6 +11,7 @@ Assignments
 - `3` OpenMP Programming
 - `4` MPI Programming
 - `5` CUDA Programming
+- `6` OpenCL Programming - https://hackmd.io/w_711eM4TZeWuK27ar8HcA?view
    
 Final Project - Acceleration-of-FP-Tree-construction
 ---
