@@ -13,19 +13,20 @@ Assignments
 - `5` CUDA Programming
 - `6` OpenCL Programming - https://hackmd.io/w_711eM4TZeWuK27ar8HcA?view
    
-Final Project - Acceleration-of-FP-Tree-construction
----
+# Acceleration-of-FP-Tree-construction (Open MPI)
 
-This repository contains a C++11 implementation of the well-known FP-growth algorithm, published in the hope that it will be useful. I tested the code on three different samples and results were checked against [this other implementation](http://www.borgelt.net/fpgrowth.html) of the algorithm.
+This repository contains a C++11 implementation of the well-known FP-growth algorithm, published in the hope that it will be useful. I tested the code on three different samples and results were checked against [this other implementation](http://www.borgelt.net/fpgrowth.html) of the algorithm and use MPI method to construct FP-tree in parallel.
 
 The files `fptree.hpp` and `fptree.cpp` contain the data structures and the algorithm, and `main.cpp` contains a few tests.
+
+The file `MPI_tree.cpp` contains the FP-tree parallelized using the MPI method.
 
 Compile the code using the appropriate options for C++11 (e.g. `-std=c++11` using g++).
 
 
-### branch - jett 
+### branch
 
-* Use OpenMP to parallelize the FP-tree construction
+* Use MPI to parallelize the FP-tree construction
 
 * Parallelize the process by dividing it into two parts:        
     * Build frequency item set
@@ -34,33 +35,14 @@ Compile the code using the appropriate options for C++11 (e.g. `-std=c++11` usin
 
 #### How to run the code
 
-* If you are using Docker, just follow the instructions below
+* Please ensure that your environment supports MPI and g++, then follow the instructions below
 
-    ```bash
-    # Build the Docker image and create the container
-    docker-compose up 
-
-    # Navigate to the FP-growth directory
-    cd FP-growth
-
-    # Remove all compiled files
-    make clean
-
-    # Compile the program
-    make
-
-    # Run the parallel code on the dataset
-    ./main -t {number_of_threads}
-    ```
-
-* If you are not using Docker, please ensure that your environment supports OpenMP and g++, then follow the instructions below
-
-   * First: change the data file directory(data_folderPath) in main.cpp 
+   * First: change the data file directory(data_folderPath) in MPI_main.cpp 
 
    * Then
        ```bash
        # Navigate to the FP-growth directory
-       cd FP-growth
+       cd src
    
        # Remove all compiled files
        make clean
@@ -69,6 +51,7 @@ Compile the code using the appropriate options for C++11 (e.g. `-std=c++11` usin
        make
    
        # Run the parallel code on the dataset
-       ./main -t {number_of_threads}
+      srun --mpi=pmix -n {number_of_processors} main
        ```
+
 
