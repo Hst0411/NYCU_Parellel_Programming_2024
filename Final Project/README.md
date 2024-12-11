@@ -9,7 +9,7 @@ The file `MPI_tree.cpp` contains the FP-tree parallelized using the MPI method.
 Compile the code using the appropriate options for C++11 (e.g. `-std=c++11` using g++).
 
 
-### branch - jett 
+### branch
 
 * Use MPI to parallelize the FP-tree construction
 
