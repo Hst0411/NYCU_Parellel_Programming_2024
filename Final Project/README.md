@@ -4,6 +4,8 @@ This repository contains a C++11 implementation of the well-known FP-growth algo
 
 The files `fptree.hpp` and `fptree.cpp` contain the data structures and the algorithm, and `main.cpp` contains a few tests.
 
+The file `MPI_tree.cpp` contains the FP-tree parallelized using the MPI method.
+
 Compile the code using the appropriate options for C++11 (e.g. `-std=c++11` using g++).
 
 
@@ -20,7 +22,7 @@ Compile the code using the appropriate options for C++11 (e.g. `-std=c++11` usin
 
 * Please ensure that your environment supports MPI and g++, then follow the instructions below
 
-   * First: change the data file directory(data_folderPath) in main.cpp 
+   * First: change the data file directory(data_folderPath) in MPI_main.cpp 
 
    * Then
        ```bash
