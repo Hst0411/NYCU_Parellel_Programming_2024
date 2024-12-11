@@ -1,7 +1,7 @@
 # NYCU Parallel Programming, 2024 Fall
 
-- 📖 Parallel Programming, 2024 Fall, NYCU
-- 🧑‍🏫 You, Yi-Ping
+- 📖 Parallel Programming, 2024 Fall, NYCU - https://nycu-sslab.github.io/PP-f24/
+- 🧑‍🏫 You, Yi-Ping - https://ypyou.github.io/
 
 Assignments
 ---
