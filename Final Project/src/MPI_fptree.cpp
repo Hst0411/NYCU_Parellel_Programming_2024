@@ -12,22 +12,6 @@ using namespace std;
 
 #include "../include/fptree.hpp"
 
-void printFPTree(const std::shared_ptr<FPNode>& node, const std::string& indent = "") {
-    if (!node) return;
-
-    // print current node
-    if (node->item.empty()) {
-        std::cout << indent << "(Root)" << "\n";
-    } else {
-        std::cout << indent << "Item: " << node->item << ", Frequency: " << node->frequency << "\n";
-    }
-
-    // print child node recursively
-    for (const auto& child : node->children) {
-        printFPTree(child, indent + "  "); // 每層增加空白
-    }
-}
-
 FPNode::FPNode(const Item& item, const std::shared_ptr<FPNode>& parent) :
     item( item ), frequency( 1 ), node_link( nullptr ), parent( parent ), children()
 {
@@ -56,7 +40,7 @@ FPTree::FPTree(const std::vector<Transaction>& transactions, uint64_t minimum_su
     int end_idx = start_idx + local_transaction_count + (world_rank < extra_transactions);
     //std::cout << "rank " << world_rank << ", end_idx: " << end_idx << '\n';
 
-    //double item_frequency_start_time = MPI_Wtime();
+    double item_frequency_start_time = MPI_Wtime();
     // local data
     std::vector<Transaction> local_transactions(transactions.begin() + start_idx, transactions.begin() + end_idx);
     /**/
@@ -125,41 +109,12 @@ FPTree::FPTree(const std::vector<Transaction>& transactions, uint64_t minimum_su
         //}
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    /*
+    /**/
     if (world_rank == 0){
         double item_frequency_end_time = MPI_Wtime();
         std::cout << "Build frequency item set costs " << (item_frequency_end_time - item_frequency_start_time)*1000 << " ms\n";
         std::cout << "Build frequency item set passed!" << std::endl;
-        std::cout << "------------------------------------------------------" << std::endl;
     }
-    */
-    /*
-    // scan the transactions counting the frequency of each item
-    // 計算每個 item 的 frequency
-    std::map<Item, uint64_t> frequency_by_item;
-    for ( const Transaction& transaction : transactions ) {
-        for ( const Item& item : transaction ) {
-            // 計數每個 item 在 transaction 中的出現次數
-            ++frequency_by_item[item];
-        }
-    }
-    */
-    /*
-    // test output
-    if (world_rank == 0) {
-        std::cout << "------------------------------------------------------" << std::endl;
-        std::cout << "Here is rank: " << world_rank << std::endl;
-        std::cout << "Counting the frequency of each item:" << std::endl;
-        for ( const Transaction& transaction : transactions ) {
-            for ( const Item& item : transaction ) {
-                // 計數每個 item 在 transaction 中的出現次數
-                std::cout << "item: " << item << " frequency: "  << global_frequency_by_item[item] << ", ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << "------------------------------------------------------" << std::endl;
-    }
-    */
 
     /**/
     // keep only items which have a frequency greater or equal than the minimum support threshold
@@ -225,50 +180,6 @@ FPTree::FPTree(const std::vector<Transaction>& transactions, uint64_t minimum_su
         }
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    
-    /*
-    // verify that the broadcast is successful
-    if (world_rank == 0) {
-        std::cout << "Broadcasted global_frequency_by_item successfully!" << std::endl;
-    }
-    */
-
-    /*
-    // transaction deleted low frequency
-    std::cout << "Rank " << world_rank << std::endl;
-    std::vector<Transaction> filtered_transactions;
-    for (const auto& transaction : transactions) {
-        Transaction filtered_transaction;
-        for (const auto& item : transaction) {
-            if (global_frequency_by_item.count(item) > 0) {
-                filtered_transaction.push_back(item);
-            }
-        }
-        if (!filtered_transaction.empty()) {
-            filtered_transactions.push_back(filtered_transaction);
-        }
-    }
-
-    // print transactions deleted low frequency
-    std::cout << "Transactions removed due to low frequency:\n";
-    for (size_t i = 0; i < filtered_transactions.size(); ++i) {
-        std::cout << "Transaction " << i + 1 << ": ";
-        for (const auto& item : filtered_transactions[i]) {
-            std::cout << item << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "------------------------------------------------------" << std::endl;
-    */
-
-    /*
-    // test output
-    std::cout << "Keep only items which have a frequency greater or equal than the minimum support threshold:" << std::endl;
-    for ( auto it = frequency_by_item.cbegin(); it != frequency_by_item.cend(); it++) {
-        const uint64_t item_frequency = (*it).second;
-        std::cout << "First: " << (*it).first << " , item_frequency: " << item_frequency << std::endl;
-    }
-    */
 
     // order items by decreasing frequency
     // 根據 item freq. 作 decreasing
@@ -281,40 +192,6 @@ FPTree::FPTree(const std::vector<Transaction>& transactions, uint64_t minimum_su
         }
     };
     std::set<std::pair<Item, uint64_t>, frequency_comparator> items_ordered_by_frequency(global_frequency_by_item.cbegin(), global_frequency_by_item.cend());
-    
-    /*
-    // print transactions sorted from each processors
-    std::cout << "Rank " << world_rank << " " << std::endl;
-    for (size_t i = 0; i < local_transactions.size(); ++i) {
-        const Transaction& transaction = local_transactions[i];
-        Transaction sorted_transaction;
-
-        // Filter and add items based on the order of items sorted by frequency
-        for (const auto& pair : items_ordered_by_frequency) {
-            const Item& item = pair.first;
-            if (std::find(transaction.cbegin(), transaction.cend(), item) != transaction.cend()) {
-                sorted_transaction.push_back(item);
-            }
-        }
-        // print transactions
-        std::cout << "Transaction " << i + 1 << ": ";
-        for (const auto& item : sorted_transaction) {
-            std::cout << item << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "------------------------------------------------------" << std::endl;
-    */
-
-    // test output
-    /*
-    std::cout << "Order items by decreasing frequency:" << std::endl;
-    for ( const auto& pair : items_ordered_by_frequency) {
-        const uint64_t item_frequency = pair.second;
-        std::cout << "Item: " << pair.first << ", item_frequency: " << item_frequency << std::endl;
-    }
-    std::cout << "------------------------------------------------------" << std::endl;
-    */
 
     double tree_start_time = MPI_Wtime();
 
@@ -451,27 +328,9 @@ FPTree::FPTree(const std::vector<Transaction>& transactions, uint64_t minimum_su
         double tree_end_time = MPI_Wtime();
         std::cout << "Build FP-tree costs " << (tree_end_time - tree_start_time)*1000 << " ms\n";
         std::cout << "Build FP-tree passed!" << std::endl;
-        //std::cout << "------------------------------------------------------" << std::endl;
-        //std::cout << "Final FP-tree structure:\n";
-        //printFPTree(local_root);
+        std::cout << "------------------------------------------------------" << std::endl;
     }
-    
-    // select and sort the frequent items in transaction according to the order of items_ordered_by_frequency
-    /*
-    std::cout << "Item Frequencies in the FP-tree:\n";
-    for (const auto& pair : header_table) {
-        const Item& item = pair.first;
-        auto node = pair.second;
-        // std::cout << node->item << ": " << "\n";
-        // 累積該 item 的頻率
-        uint64_t total_frequency = 0;
-        while (node != nullptr) {
-            total_frequency += node->frequency;
-            node = node->node_link;
-        }
-        std::cout << "Item: " << item << ", Frequency: " << total_frequency << "\n";
-    }
-    */
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // start tree construction
     // scan the transactions again
