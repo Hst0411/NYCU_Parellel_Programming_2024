@@ -34,7 +34,7 @@ Compile the code using the appropriate options for C++11 (e.g. `-std=c++11` usin
        make
    
        # Run the parallel code on the dataset
-      srun -n {number_of_processors} main
+      srun --mpi=pmix -n {number_of_processors} main
        ```
 
 
